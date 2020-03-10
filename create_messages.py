@@ -76,5 +76,5 @@ for obj in bucket.objects.filter(Prefix=path):
         result = move_to_S3(bucket_name,message_name) if resp == 200 else False
         print("{} Success".format(message_name)) if result is True else print("{} Failed".format(message_name))
         os.remove(message_name) if result is True else None
-    if count ==  8:
+    if count ==  10:
         break
