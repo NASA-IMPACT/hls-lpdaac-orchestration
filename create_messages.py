@@ -24,7 +24,7 @@ def write_message(bucket_name,file_name):
         key = "/".join([product_id,FILE_TYPE[i],file['name']])
         key = key.replace('browse','thumbnail') if FILE_TYPE[i] is 'browse' else key
         obj = S3.ObjectSummary(bucket_name, key)
-        file['checksum-type'] = "MD5"
+        file['checksumType'] = "MD5"
         file['checksum'] = obj.e_tag.replace("\"","")
         file['size'] = obj.size
         file['type'] = FILE_TYPE[i]
