@@ -5,10 +5,24 @@ import uuid
 import update_credentials
 import logging
 import os
+import hashlib
 
 from botocore.exceptions import ClientError
 from collections import OrderedDict
 
+def compute_checksum(bucket_name, key):
+    filename = "tempfile"
+    creds = update_credentials.assume_role('arn:aws:iam::611670965994:role/gcc-S3Test','brian_test')
+    client = boto3.client('s3',
+            aws_access_key_id=creds['AccessKeyId'],
+            aws_secret_access_key=creds['SecretAccessKey'],
+            aws_session_token=creds['SessionToken']
+            )
+    client.download_file(bucket_name,key,filename)
+    with open(filename, "rb") as f:
+        md5_val = hashlib.md5(f.read()).hexdigest()
+        print(f'MD5 value: {md5_val}')
+    os.remove(filename)
 def write_message(bucket_name,file_name):
     product_id = file_name.split('.')[1]
     message = OrderedDict()
@@ -25,7 +39,7 @@ def write_message(bucket_name,file_name):
         key = key.replace('browse','thumbnail') if FILE_TYPE[i] is 'browse' else key
         obj = S3.ObjectSummary(bucket_name, key)
         file['checksumType'] = "MD5"
-        file['checksum'] = obj.e_tag.replace("\"","")
+        file['checksum'] = compute_checksum(bucket_name,obj.key)
         file['size'] = obj.size
         file['type'] = FILE_TYPE[i]
         file['uri'] = "s3://" + bucket_name + '/' + obj.key
@@ -55,9 +69,10 @@ bucket_name = 'hls-global'
 count = 0
 product_id = 'S30'
 folder = 'data'
+env = "prod"
 path = "/".join([product_id,folder,''])
 header_extension = '.hdf.hdr'
-FILE_EXTENSIONS = ['.hdf','.cmr.xml','.jpeg']
+FILE_EXTENSIONS = ['.hdf','.cmr.xml','.jpg']
 FILE_TYPE = ['data','metadata','browse']
 creds = update_credentials.assume_role('arn:aws:iam::611670965994:role/gcc-S3Test','brian_test')
 S3 = boto3.resource('s3',
@@ -72,9 +87,9 @@ for obj in bucket.objects.filter(Prefix=path):
     if file_name.endswith('hdr'):
         count += 1
         json_object, message_name = write_message(bucket_name,file_name.replace(header_extension,''))
-        resp = send_messages.send(json_object, creds)
+        resp = send_messages.send(json_object, creds, env)
         result = move_to_S3(bucket_name,message_name) if resp == 200 else False
         print("{} Success".format(message_name)) if result is True else print("{} Failed".format(message_name))
         os.remove(message_name) if result is True else None
-    if count ==  10:
+    if count ==  1:
         break

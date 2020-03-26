@@ -1,9 +1,13 @@
 import boto3
 import os
 
-def send(message, creds):
+def send(message, creds, env):
     region_name = 'us-west-2'
-    topic_arn = 'arn:aws:sns:us-west-2:560130786230:lp-uat-sns-notification-topic'
+    topic_arns = {
+        "uat":"arn:aws:sns:us-west-2:560130786230:lp-uat-sns-notification-topic",
+        "prod":"arn:aws:sns:us-west-2:643705676985:lp-prod-sns-notification-topic"
+    }
+    topic_arn = topic_arns[env]
 
     aws_access_key_id = creds.get('AccessKeyId')
     aws_secret_access_key = creds.get('SecretAccessKey')
