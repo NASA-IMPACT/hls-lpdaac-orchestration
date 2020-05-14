@@ -73,6 +73,7 @@ def move_to_S3(bucket_name,report_name):
         return False
     return True
 
+print("Started: ", datetime.datetime.utcnow())
 OUTPUT_FILE_NAME = "HLS_reconcile_{}.rpt"
 BUCKET_NAME = 'hls-global'
 role = 'arn:aws:iam::611670965994:role/gcc-S3Test'
@@ -80,13 +81,15 @@ session = 'reports'
 creds = assume_role(role,session)
 RESOURCE = initiate_resource(creds,'s3')
 CLIENT = initiate_client(creds,'s3')
-DATE = get_date(year=2020,month=4,day=7)
+DATE = get_date(year=2020,month=4,day=26)
 PROD = "S30"
 msg_location = "/".join([PROD,"data",DATE])
-print(msg_location)
+
 bucket = RESOURCE.Bucket(BUCKET_NAME)
 count = 0
 for obj in bucket.objects.filter(Prefix=msg_location):
     report_name = retrieve_message(obj) if obj.key.endswith("v1.5.json") else None
 
 print("Successfully generated report: ", report_name) if move_to_S3(BUCKET_NAME,report_name) is True else print("Failed to generate report: ", report_name)
+
+print("Finished: ", datetime.datetime.utcnow())
