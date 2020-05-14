@@ -65,7 +65,7 @@ arn = create_arn(rdsname)
 identifier = "87109f8b-6055-4d33-a382-12937864b903"
 sql = "SELECT granule FROM granule_log WHERE event ->> 'JobId' = :identifier;"
 sql_parameters = [{"name": "identifier", "value": {"stringValue": identifier}}]
-response = rds_statement(rdsname,arn,secret,sql)
+response = rds_statement(rdsname,arn,secret,sql, sql_parameters)
 output = process_response(response)
 report = create_report(identifier,output)
 
