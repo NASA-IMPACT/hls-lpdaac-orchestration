@@ -20,15 +20,15 @@ def create_arn(rdsname):
     arn = ":".join([prefix,region,account,"cluster",rdsname])
     return arn
 
-def rds_statement(rdsname, arn, secret,sql):
+def rds_statement(rdsname, arn, secret, sql, sql_parameters):
     rds_client = boto3.client("rds-data")
     response = rds_client.execute_statement(
         secretArn=secret,
         database="hls",
         resourceArn=arn,
         sql=sql,
-        #parameters=sql_parameters,
-        )
+        parameters=sql_parameters,
+    )
     return response
 
 def process_response(response):
@@ -63,7 +63,8 @@ rdsname = "-".join(["rds",stackname])
 secret = get_cf_resources(stackname)
 arn = create_arn(rdsname)
 identifier = "87109f8b-6055-4d33-a382-12937864b903"
-sql = "SELECT granule FROM granule_log WHERE event ->> 'JobId' = '" + identifier + "';"
+sql = "SELECT granule FROM granule_log WHERE event ->> 'JobId' = :identifier;"
+sql_parameters = [{"name": "identifier", "value": {"stringValue": identifier}}]
 response = rds_statement(rdsname,arn,secret,sql)
 output = process_response(response)
 report = create_report(identifier,output)
