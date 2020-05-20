@@ -29,6 +29,7 @@ def rds_statement(rdsname, arn, secret, sql, sql_parameters):
         sql=sql,
         parameters=sql_parameters,
     )
+    print(response["records"])
     return response
 
 def process_response(response):
@@ -61,13 +62,16 @@ def create_report(identifier,output):
 stackname = "hls-harkins-ebs"
 rdsname = "-".join(["rds",stackname])
 secret = get_cf_resources(stackname)
+print(secret)
 arn = create_arn(rdsname)
-identifier = "87109f8b-6055-4d33-a382-12937864b903"
+identifier = "3d601b9c-c4a1-48fd-8cb8-9edc5e340bd6"
+identifier = "3d601b9c-c4a1-48fd-8cb8-9edc5e340bd6"
 sql = "SELECT granule FROM granule_log WHERE event ->> 'JobId' = :identifier;"
 sql_parameters = [{"name": "identifier", "value": {"stringValue": identifier}}]
 response = rds_statement(rdsname,arn,secret,sql, sql_parameters)
 output = process_response(response)
 report = create_report(identifier,output)
+report["stackname"] = stackname
 
 with open("new_report.json","w") as f:
     json.dump(report,f)
