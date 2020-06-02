@@ -20,60 +20,24 @@ def compute_checksum(bucket_name, key):
             )
     client.download_file(bucket_name,key,filename)
     with open(filename, "rb") as f:
-        md5_val = hashlib.md5(f.read()).hexdigest()
-        print(f'MD5 value: {md5_val}')
+        checksum_val = hashlib.sha512(f.read()).hexdigest()
     os.remove(filename)
-def write_message(bucket_name,file_name):
-    product_id = file_name.split('.')[1]
-    message = OrderedDict()
-    message['collection'] = "".join(file_name.split('.')[0:2])
-    message['identifier'] = str(uuid.uuid1())
-    message['version'] = file_name[-3:]
-    message['product'] = {}
-    message['product']['files'] = [{},{},{}]
-    message['product']['name'] = file_name
-    message['product']['dataVersion'] = file_name[-3:]
-    for i,file in enumerate(message['product']['files']):
-        file['name'] = file_name + FILE_EXTENSIONS[i]
-        key = "/".join([product_id,FILE_TYPE[i],file['name']])
-        key = key.replace('browse','thumbnail') if FILE_TYPE[i] is 'browse' else key
-        obj = S3.ObjectSummary(bucket_name, key)
-        file['checksumType'] = "MD5"
-        file['checksum'] = compute_checksum(bucket_name,obj.key)
-        file['size'] = obj.size
-        file['type'] = FILE_TYPE[i]
-        file['uri'] = "s3://" + bucket_name + '/' + obj.key
-    message_name = 'hls-cnm-notification-message-' + file_name.replace('.','-') + '.json'
-    with open(message_name,'w') as outfile:
-         json.dump(message,outfile)
-    json_object = json.dumps(message)
-    return json_object, message_name
-
-def move_to_S3(bucket_name,message_name):
-    object_name = "/".join(['messages',message_name.split('-')[-3],message_name])
-    creds = update_credentials.assume_role('arn:aws:iam::611670965994:role/gcc-S3Test','brian_test')
-    client = boto3.client('s3',
-            aws_access_key_id=creds['AccessKeyId'],
-            aws_secret_access_key=creds['SecretAccessKey'],
-            aws_session_token=creds['SessionToken']
-            )
-    try:
-        response = client.upload_file(message_name,bucket_name,object_name)
-    except ClientError as e:
-        logging.error(e)
-        return False
-    return True
+    return checksum_val
 
 #get hdf files
 bucket_name = 'hls-global'
 count = 0
 product_id = 'S30'
 folder = 'data'
+data_day = "2020117"
 env = "prod"
-path = "/".join([product_id,folder,''])
+path = "/".join([product_id,folder,data_day])
 header_extension = '.hdf.hdr'
-FILE_EXTENSIONS = ['.hdf','.cmr.xml','.jpg']
-FILE_TYPE = ['data','metadata','browse']
+FILE_TYPE = {
+        "tif":'data',
+        "xml":'metadata',
+        "jpg":'browse'
+        }
 creds = update_credentials.assume_role('arn:aws:iam::611670965994:role/gcc-S3Test','brian_test')
 S3 = boto3.resource('s3',
         aws_access_key_id=creds['AccessKeyId'],
@@ -81,15 +45,44 @@ S3 = boto3.resource('s3',
         aws_session_token=creds['SessionToken']
         )
 bucket = S3.Bucket(bucket_name)
+granule_name_old = None
 
 for obj in bucket.objects.filter(Prefix=path):
-    file_name = obj.key.split('/')[-1]
-    if file_name.endswith('hdr'):
+    granule_name_new = obj.key.split("/")[3]
+    if granule_name_new != granule_name_old:
+        granule_name_old = granule_name_new
+        print(granule_name_new)
         count += 1
-        json_object, message_name = write_message(bucket_name,file_name.replace(header_extension,''))
+        creds = update_credentials.assume_role('arn:aws:iam::611670965994:role/gcc-S3Test','brian_test')
+        S3 = boto3.resource('s3',
+                aws_access_key_id=creds['AccessKeyId'],
+                aws_secret_access_key=creds['SecretAccessKey'],
+                aws_session_token=creds['SessionToken']
+                )
+        message = OrderedDict()
+        message['collection'] = "".join(granule_name_new.split('.')[0:2])
+        message['identifier'] = str(uuid.uuid1())
+        message['version'] = granule_name_new[-3:]
+        message['product'] = {}
+        message['product']['files'] = []
+        message['product']['name'] = granule_name_new
+        message['product']['dataVersion'] = granule_name_new[-3:]
+        granule_path = "/".join([path,granule_name_new,""])
+        for file in bucket.objects.filter(Prefix=granule_path):
+            file_name = file.key.split("/")[-1]
+            if not file_name.endswith("json"):
+                granule = OrderedDict()
+                granule["name"] = file_name
+                granule['checksumType'] = "SHA512"
+                granule['checksum'] = compute_checksum(bucket_name,file.key)
+                granule['size'] = file.size
+                granule['type'] = FILE_TYPE[file_name.split(".")[-1]]
+                granule['uri'] = "s3://" + bucket_name + '/' + file.key
+            message["product"]["files"].append(granule)
+        json_object = json.dumps(message)
+        with open(granule_name_new + ".json","w") as f:
+            json.dump(json_object,f)
         resp = send_messages.send(json_object, creds, env)
-        result = move_to_S3(bucket_name,message_name) if resp == 200 else False
-        print("{} Success".format(message_name)) if result is True else print("{} Failed".format(message_name))
-        os.remove(message_name) if result is True else None
-    if count ==  1:
-        break
+        print("{} Success".format(granule_name_new)) if resp == 200 else print("{} Failed".format(granule_name_new))
+        if count ==  10:
+            break
