@@ -2,7 +2,6 @@ import json
 import boto3
 import os
 import csv
-import glob
 import datetime
 from botocore.exceptions import ClientError
 
