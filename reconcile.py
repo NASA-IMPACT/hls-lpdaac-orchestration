@@ -80,7 +80,7 @@ session = 'reports'
 creds = assume_role(role,session)
 RESOURCE = initiate_resource(creds,'s3')
 CLIENT = initiate_client(creds,'s3')
-DATE = get_date(year=2020,month=4,day=26)
+DATE = get_date(year=2020,month=4,day=25)
 PROD = "S30"
 msg_location = "/".join([PROD,"data",DATE])
 

@@ -7,9 +7,10 @@ import datetime
 def send(message, creds, message_name):
     region_name = 'us-west-2'
     topic_arns = {
+        "uat":"arn:aws:sns:us-west-2:560130786230:lp-uat-sns-notification-topic",
         "prod":"arn:aws:sns:us-west-2:643705676985:lp-prod-sns-notification-topic"
     }
-    topic_arn = topic_arns["prod"]
+    topic_arn = topic_arns["uat"]
 
     aws_access_key_id = creds.get('AccessKeyId')
     aws_secret_access_key = creds.get('SecretAccessKey')
@@ -53,14 +54,14 @@ date = "2020116"
 failed_granules = [
         "T16XDR",
         "T15XWL",
-#        "T17XNL",
-#        "T18XWR",
-#        "T20XNS",
-#        "T23XNM",
-#        "T22XDR",
-#        "T23XNL",
-#        "T19XEL",
-#        "T24XVR",
+        "T17XNL",
+        "T18XWR",
+        "T20XNS",
+        "T23XNM",
+        "T22XDR",
+        "T23XNL",
+        "T19XEL",
+        "T24XVR",
         ]
 
 successful_granules = [
