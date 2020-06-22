@@ -26,14 +26,14 @@ def initiate_resource(creds,service):
             )
     return resource
 
-def get_date(year=None,month=None,day=None,offset=0):
+def get_datetime(year=None,month=None,day=None,offset=1):
     if year is None or month is None or day is None:
         print("Missing year, day, or month. Processing for now minus the offset value")
-        now = datetime.datetime.utcnow().timetuple()
+        now = datetime.datetime.utcnow() - datetime.timedelta(days=offset)
     else:
-        now = datetime.datetime(year,month,day).timetuple()
+        now = datetime.datetime(year,month,day)
     
-    return f"{now.tm_year}{now.tm_yday-offset:03}"
+    return now
 
 def retrieve_message(obj):
     file = obj.get()
@@ -58,6 +58,7 @@ def write_report(message):
     return report_name
 
 def move_to_S3(bucket_name,report_name):
+    print(report_name)
     object_name = "/".join([PROD,'reconciliation_reports',report_name.split('.rpt')[0].split('_')[-1],report_name])
     creds = assume_role('arn:aws:iam::611670965994:role/gcc-S3Test','brian_test')
     client = boto3.client('s3',
@@ -80,15 +81,23 @@ session = 'reports'
 creds = assume_role(role,session)
 RESOURCE = initiate_resource(creds,'s3')
 CLIENT = initiate_client(creds,'s3')
-DATE = get_date(year=2020,month=4,day=25)
+processed_date = get_datetime().date()
+DATE = f"{processed_date.timetuple().tm_year}{processed_date.timetuple().tm_yday:03}"
 PROD = "S30"
-msg_location = "/".join([PROD,"data",DATE])
+msg_location = "/".join([PROD,"data"])
 
 bucket = RESOURCE.Bucket(BUCKET_NAME)
 count = 0
+report_name = None
 for obj in bucket.objects.filter(Prefix=msg_location):
-    report_name = retrieve_message(obj) if obj.key.endswith("v1.5.json") else None
+    if obj.key.endswith("v1.5.json") and obj.last_modified.date() == processed_date:
+        count +=1
+        report_name = retrieve_message(obj)
 
-print("Successfully generated report: ", report_name) if move_to_S3(BUCKET_NAME,report_name) is True else print("Failed to generate report: ", report_name)
+print(f"Number of granules processed for {processed_date.strftime('%Y%m%d')}: {count}")
 
+if report_name is not None:
+    print("Successfully generated report: ", report_name) if move_to_S3(BUCKET_NAME,report_name) is True else print("Failed to generate report: ", report_name)
+else:
+    print("No data was produced for date " + processed_date.strftime("%Y%m%d"))
 print("Finished: ", datetime.datetime.utcnow())
