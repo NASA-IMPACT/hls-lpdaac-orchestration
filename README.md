@@ -10,4 +10,5 @@ This resposity contains HLS LPDAAC Orchestration Python Script, Docker container
 * Clone the repository
 * Login to pulumi `pulumi login --local`
 * Deploy the stack with command `pulumi up`
+* * chose the stack name `hls-lpdaac-orchestration` if asked
 
