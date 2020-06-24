@@ -32,7 +32,7 @@ const reconciliationScheduleHandler = async (event) => {
 
 // More info on Schedule Expressions at
 // https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-const reconciliationSchedule: aws.cloudwatch.EventRuleEventSubscription = aws.cloudwatch.onSchedule(
+const reconciliationSchedule = aws.cloudwatch.onSchedule(
     "reconciliationScheduleHandler",
     "cron(0 12 * * ? *)",
     reconciliationScheduleHandler,
