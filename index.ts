@@ -1,9 +1,7 @@
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
 
-
 const cluster = new awsx.ecs.Cluster("hls-lpdaac-orchestration");
-const img = awsx.ecs.Image.fromPath("hls-lpdaac-orchestration-img", "./script");
 
 //example ref - https://www.pulumi.com/docs/tutorials/aws/video-thumbnailer/
 const reconciliationTask = new awsx.ecs.FargateTaskDefinition("reconciliationTask", {
