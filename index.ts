@@ -12,7 +12,8 @@ const reconciliationTask = new awsx.ecs.FargateTaskDefinition("reconciliationTas
 });
 
 const reconciliationScheduleHandler = async (event) => {
-    reconciliationTask.run({ cluster });
+    console.log(`started reconciliationScheduleHandler`);
+    await reconciliationTask.run({ cluster });
 };
 
 
@@ -20,6 +21,7 @@ const reconciliationScheduleHandler = async (event) => {
 // https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
 const reconciliationSchedule = aws.cloudwatch.onSchedule(
     "reconciliationScheduleHandler",
-    "cron(0 12 * * ? *)",
+    //"cron(0/2 * * * ? *)",
+    "cron(0 6 * * ? *)", //run at 6 AM
     reconciliationScheduleHandler,
 );
