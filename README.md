@@ -20,16 +20,17 @@ This resposity contains HLS LPDAAC Orchestration Python Script, Docker container
     * Note: main deployment code is in `index.ts` file
     
 ## Deploying in Goddard Commercial Cloud (GCC)
-* GCC does not have a default VPC, thus we have to specify a VPC from an existing id in the index.ts file (example below)
+* GCC does not have a default VPC, thus we have to specify a VPC from an existing id in the index.ts file (example below) <br/>
+
 `const vpc = awsx.ec2.Vpc.fromExistingIds("my-vpc", {
     vpcId: "vpc-40b38f25",
     // publicSubnetIds: [],
     // privateSubnetIds: [],
 });
-
 const cluster = new awsx.ecs.Cluster("hls-lpdaac-orchestration",{vpc});`
 
-* GCC also restricts users from creating roles without permissions boundaries set so we also need to update the new role command in the index.ts file (example below)
+* GCC also restricts users from creating roles without permissions boundaries set so we also need to update the new role command in the index.ts file (example below) <br/>
+
 `const reconciliationTaskRole = new aws.iam.Role("reconciliationTask-taskRole", {
     assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
         Service: "ecs-tasks.amazonaws.com",
