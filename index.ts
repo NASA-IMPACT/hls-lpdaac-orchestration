@@ -4,7 +4,7 @@ const reconciliationTaskRole = new aws.iam.Role("reconciliationTask-taskRole", {
     assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
         Service: "ecs-tasks.amazonaws.com",
     }),
-    permissionsBoundary: "arn:aws:iam::418960797021:policy/gcc-tenantOperatorBoundary"
+    permissionsBoundary: "arn:aws:iam::611670965994:policy/gcc-tenantOperatorBoundary"
 });
 const gccAssumeRolePolicy = new aws.iam.Policy("assumeGCCRolePolicy", {
     policy: {
@@ -30,9 +30,9 @@ for (const policy of managedPolicyArns) {
         { policyArn: policy, role: reconciliationTaskRole },
     );
 };
-const vpc = awsx.ec2.Vpc.fromExistingIds("HLS-Test-VPC", {
-    vpcId: "vpc-07a334625775da83c",
-    // publicSubnetIds: [],
+const vpc = awsx.ec2.Vpc.fromExistingIds("HLS-Production-VPC", {
+    vpcId: "vpc-090abb90ed08fb5ac",
+    publicSubnetIds: ["subnet-0ddcc2e2e0d6c22d1"],
     // privateSubnetIds: [],
 });
 const cluster = new awsx.ecs.Cluster("hls-lpdaac-orchestration", { vpc });
@@ -40,7 +40,7 @@ const reconciliationTaskExecutionRole = new aws.iam.Role("reconciliationTask-exe
     assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
         Service: "ecs-tasks.amazonaws.com",
     }),
-    permissionsBoundary: "arn:aws:iam::418960797021:policy/gcc-tenantOperatorBoundary"
+    permissionsBoundary: "arn:aws:iam::611670965994:policy/gcc-tenantOperatorBoundary"
 });
 new aws.iam.RolePolicyAttachment("reconciliationTaskExecutionRoleAttach", {
     role: reconciliationTaskExecutionRole,
@@ -66,18 +66,22 @@ const reconciliationScheduleHandlerRole = new aws.iam.Role("reconciliationSchedu
             Sid: "",
         }],
     },
-    permissionsBoundary: "arn:aws:iam::418960797021:policy/gcc-tenantOperatorBoundary"
+    permissionsBoundary: "arn:aws:iam::611670965994:policy/gcc-tenantOperatorBoundary"
 });
 new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach", {
     role: reconciliationScheduleHandlerRole,
     policyArn: aws.iam.ManagedPolicies.AWSLambdaFullAccess,
 });
+//new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach", {
+//    role: reconciliationScheduleHandlerRole,
+//    policyArn: aws.iam.ManagedPolicies.AmazonEC2ContainerServiceFullAccess,
+//});
 // More info on Schedule Expressions at
 // https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
 const reconciliationSchedule = aws.cloudwatch.onSchedule(
     "reconciliationScheduleHandler",
-    "cron(0/1 * * * ? *)",  //run every minute for testing
-    //"cron(0 6 * * ? *)", //run at 6 AM
+    //"cron(0/1 * * * ? *)",  //run every minute for testing
+    "cron(0 6 * * ? *)", //run at 6 AM
     new aws.lambda.CallbackFunction("reconciliationScheduleHandlerFunc", {
         role: reconciliationScheduleHandlerRole,
         callback: async (e) => {
