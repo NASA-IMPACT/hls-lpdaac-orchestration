@@ -68,14 +68,14 @@ const reconciliationScheduleHandlerRole = new aws.iam.Role("reconciliationSchedu
     },
     permissionsBoundary: "arn:aws:iam::611670965994:policy/gcc-tenantOperatorBoundary"
 });
-new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach", {
+new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach1", {
     role: reconciliationScheduleHandlerRole,
     policyArn: aws.iam.ManagedPolicies.AWSLambdaFullAccess,
 });
-//new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach", {
-//    role: reconciliationScheduleHandlerRole,
-//    policyArn: aws.iam.ManagedPolicies.AmazonEC2ContainerServiceFullAccess,
-//});
+new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach2", {
+    role: reconciliationScheduleHandlerRole,
+    policyArn: aws.iam.ManagedPolicies.AmazonEC2ContainerServiceFullAccess,
+});
 // More info on Schedule Expressions at
 // https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
 const reconciliationSchedule = aws.cloudwatch.onSchedule(

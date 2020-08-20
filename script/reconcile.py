@@ -47,7 +47,7 @@ def write_report(message):
     with open(report_name,writer) as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',')
         shortname = message['collection']
-        version = message['version']
+        version = message['product']['dataVersion']
         for file in message['product']['files']:
             filename = file['name']
             size = file['size']
@@ -59,7 +59,7 @@ def write_report(message):
 
 def move_to_S3(bucket_name,report_name):
     print(report_name)
-    object_name = "/".join([PROD,'reconciliation_reports',report_name.split('.rpt')[0].split('_')[-1],report_name])
+    object_name = "/".join(['reconciliation_reports',report_name.split('.rpt')[0].split('_')[-1],report_name])
     creds = assume_role('arn:aws:iam::611670965994:role/gcc-S3Test','brian_test')
     client = boto3.client('s3',
             aws_access_key_id=creds['AccessKeyId'],
@@ -83,13 +83,11 @@ RESOURCE = initiate_resource(creds,'s3')
 CLIENT = initiate_client(creds,'s3')
 processed_date = get_datetime().date()
 DATE = f"{processed_date.timetuple().tm_year}{processed_date.timetuple().tm_yday:03}"
-PROD = "S30"
-msg_location = "/".join([PROD,"data"])
 
 bucket = RESOURCE.Bucket(BUCKET_NAME)
 count = 0
 report_name = None
-for obj in bucket.objects.filter(Prefix=msg_location):
+for obj in bucket.objects.filter():
     if obj.key.endswith("v1.5.json") and obj.last_modified.date() == processed_date:
         count +=1
         report_name = retrieve_message(obj)
