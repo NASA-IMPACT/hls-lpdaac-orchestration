@@ -44,18 +44,20 @@ def retrieve_message(obj):
 def write_report(message):
     report_name = OUTPUT_FILE_NAME.format(DATE)
     writer = 'w' if not os.path.exists(report_name) else 'a'
+    lineno = 0
     with open(report_name,writer) as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',')
         shortname = message['collection']
         version = message['product']['dataVersion']
         for file in message['product']['files']:
+            lineno += 1
             filename = file['name']
             size = file['size']
             obj = RESOURCE.ObjectSummary(BUCKET_NAME,file['uri'].split('hls-global/')[-1])
             modified = obj.last_modified.strftime("%Y-%m-%dT%H:%M:%SZ")
             checksum = file['checksum']
             spamwriter.writerow([shortname,version,filename,size,modified,checksum])        
-    return report_name
+    return report_name, lineno
 
 def move_to_S3(bucket_name,report_name):
     print(report_name)
@@ -78,22 +80,27 @@ OUTPUT_FILE_NAME = "HLS_reconcile_{}.rpt"
 BUCKET_NAME = 'hls-global'
 role = 'arn:aws:iam::611670965994:role/gcc-S3Test'
 session = 'reports'
-creds = assume_role(role,session)
-RESOURCE = initiate_resource(creds,'s3')
-CLIENT = initiate_client(creds,'s3')
-processed_date = get_datetime().date()
+processed_date = get_datetime(year=2020,month=8,day=26).date()
 DATE = f"{processed_date.timetuple().tm_year}{processed_date.timetuple().tm_yday:03}"
-
-bucket = RESOURCE.Bucket(BUCKET_NAME)
 count = 0
+total_lines = 0
+
 report_name = None
-for obj in bucket.objects.filter():
-    if obj.key.endswith("v1.5.json") and obj.last_modified.date() == processed_date:
-        count +=1
-        report_name = retrieve_message(obj)
+prefixes = ["L30", "S30"]
+for prefix in prefixes:
+    creds = assume_role(role,session)
+    RESOURCE = initiate_resource(creds,'s3')
+    CLIENT = initiate_client(creds,'s3')
+    bucket = RESOURCE.Bucket(BUCKET_NAME)
+    for obj in bucket.objects.filter(Prefix=prefix):
+        if obj.key.endswith("v1.5.json") and obj.last_modified.date() == processed_date:
+            count +=1
+            report_name, lines = retrieve_message(obj)
+            total_lines += lines
+            print(total_lines, obj.key)
 
 print(f"Number of granules processed for {processed_date.strftime('%Y%m%d')}: {count}")
-
+creds = assume_role(role,session)
 if report_name is not None:
     print("Successfully generated report: ", report_name) if move_to_S3(BUCKET_NAME,report_name) is True else print("Failed to generate report: ", report_name)
 else:
