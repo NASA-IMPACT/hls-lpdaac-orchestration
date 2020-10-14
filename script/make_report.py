@@ -20,6 +20,7 @@ def retrieve_inventory(bucket, manifest_key):
 
 def filter_inventory(inventory, start_date, end_date):
     inventory = inventory.set_index("Object")
+    print(f"Searching for files created or modified between {start_date} and {end_date}")
     filtered_objects = inventory.filter(regex="^(S30|L30)\/data\/.*(tif|jpg|xml)$", axis=0)
     day_filter = (filtered_objects["Last_Modified"].ge(start_date) & filtered_objects["Last_Modified"].lt(end_date))
     final_objects = filtered_objects[day_filter]
