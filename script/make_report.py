@@ -21,9 +21,9 @@ def retrieve_inventory(bucket, manifest_key):
 def filter_inventory(inventory, start_date, end_date):
     inventory = inventory.set_index("Object")
     print(f"Searching for files created or modified between {start_date} and {end_date}")
-    filtered_objects = inventory.filter(regex="^(S30|L30)\/data\/.*(tif|jpg|xml)$", axis=0)
-    day_filter = (filtered_objects["Last_Modified"].ge(start_date) & filtered_objects["Last_Modified"].lt(end_date))
-    final_objects = filtered_objects[day_filter]
+    final_objects = inventory.filter(regex="^(S30|L30)\/data\/.*(tif|jpg|xml)$", axis=0)
+    day_filter = (final_objects["Last_Modified"].ge(start_date) & final_objects["Last_Modified"].lt(end_date))
+    final_objects = final_objects[day_filter]
     print(final_objects["Last_Modified"].min(), final_objects["Last_Modified"].max())
     final_objects = extract_checksum(final_objects)
     create_rec_report(final_objects,start_date)
@@ -36,8 +36,7 @@ def extract_checksum(final_objects):
     for key in final_objects.index:
         bucket = final_objects.loc[key,:]["Bucket"]
         metadata = client.head_object(Bucket=bucket, Key=key)
-        checksums.append(metadata["ETag"].replace('"',""))
-    final_objects["Checksum"] = checksums
+        final_objects.loc[key,"Checksum"] = metadata["ETag"].replace('"',"")
     print("finished checksum: ", datetime.datetime.now())
     return final_objects
 
@@ -47,12 +46,12 @@ def create_rec_report(report,date):
     del report["Bucket"]
 
     report = report.rename(index=lambda s: s.split("/")[-1])
-    report["Short_Name"] = ["".join(x.split(".")[0:2]) for x in report.index]
-    report["Version"] = [".".join(x.split(".")[4:6])[1:] for x in report.index]
+    report.loc[:,"Short_Name"] = ["".join(x.split(".")[0:2]) for x in report.index]
+    report.loc[:,"Version"] = [".".join(x.split(".")[4:6])[1:] for x in report.index]
     report = report.reset_index()
     report = report.reindex(columns = ["Short_Name", "Version", "Object", "Size", "Last_Modified","Checksum"])
     report.to_csv(path_or_buf=file_name,sep=",",date_format="%Y-%m-%dT%H:%M:%SZ",header=False,index=False,mode="w")
-    upload_to_s3(file_name, report_date)
+    #upload_to_s3(file_name, report_date)
 
 def upload_to_s3(report_name,report_date):
     client = boto3.client("s3")
