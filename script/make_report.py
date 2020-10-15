@@ -51,7 +51,7 @@ def create_rec_report(report,date):
     report = report.reset_index()
     report = report.reindex(columns = ["Short_Name", "Version", "Object", "Size", "Last_Modified","Checksum"])
     report.to_csv(path_or_buf=file_name,sep=",",date_format="%Y-%m-%dT%H:%M:%SZ",header=False,index=False,mode="w")
-    #upload_to_s3(file_name, report_date)
+    upload_to_s3(file_name, report_date)
 
 def upload_to_s3(report_name,report_date):
     client = boto3.client("s3")
