@@ -60,10 +60,11 @@ def upload_to_s3(report_name,report_date):
 if __name__ == "__main__":
     print(datetime.datetime.now())
     s3 = boto3.resource("s3")
-    end_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+    report_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+    end_date = report_date - datetime.timedelta(days=0)
     end_date = end_date.replace(hour=0,minute=0,second=0,microsecond=0)
     start_date = end_date - datetime.timedelta(days=1)
-    date_path = end_date.strftime("%Y-%m-%dT00-00Z")
+    date_path = report_date.strftime("%Y-%m-%dT00-00Z")
     bucket = "hls-global"
     manifest_key = f"reconciliation_reports/hls-global/HLS_data_products/{date_path}/manifest.json"
     inventory = retrieve_inventory(bucket, manifest_key)
