@@ -51,7 +51,7 @@ const reconciliationTask = new awsx.ecs.FargateTaskDefinition("reconciliationTas
     executionRole: reconciliationTaskExecutionRole,
     container: {
         image: awsx.ecs.Image.fromPath("reconciliationTask", "./script"),
-        memoryReservation: 1280,
+        memoryReservation: 3072,
     },
 });
 const reconciliationScheduleHandlerRole = new aws.iam.Role("reconciliationScheduleHandlerRole", {
