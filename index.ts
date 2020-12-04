@@ -34,8 +34,45 @@ const vpc = awsx.ec2.Vpc.fromExistingIds("HLS-Production-VPC", {
     vpcId: "vpc-090abb90ed08fb5ac",
     publicSubnetIds: ["subnet-0ddcc2e2e0d6c22d1"],
     // privateSubnetIds: [],
-});
-const cluster = new awsx.ecs.Cluster("hls-lpdaac-orchestration", { vpc });
+    });
+const sg = new awsx.ec2.SecurityGroup("hls-reconciliation", { 
+    vpc,
+    tags: {
+        "Name": "hls-reconciliation-SG"
+    }, 
+    description: "security group for HLS reconciliation process" }
+);
+const sgrule1 = new aws.ec2.SecurityGroupRule("private-ip-block", {
+    type: "ingress",
+    fromPort: 0,
+    toPort: 65535,
+    protocol: "tcp",
+    cidrBlocks: ["10.15.0.0/16"],
+    securityGroupId: sg.id,
+    description: "inbound rule for private ip block",
+    });
+const sgrule2 = new aws.ec2.SecurityGroupRule("ssh-ip-block", {
+    type: "ingress",
+    fromPort: 22,
+    toPort: 22,
+    protocol: "tcp",
+    cidrBlocks: ["10.15.0.0/16"],
+    securityGroupId: sg.id,
+    description: "inbound rule for ssh",
+    });
+const sgrule3 = new aws.ec2.SecurityGroupRule("outbound-rule", {
+    type: "egress",
+    fromPort: 0,
+    toPort: 65535,
+    protocol: "all",
+    cidrBlocks: ["0.0.0.0/0"],
+    securityGroupId: sg.id,
+    description: "allow output to any ipv4 address using any protocol",
+    });
+const cluster = new awsx.ecs.Cluster("hls-lpdaac-orchestration", { 
+   vpc,
+   securityGroups: [sg.id]}
+   );
 const reconciliationTaskExecutionRole = new aws.iam.Role("reconciliationTask-executionRole", {
     assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
         Service: "ecs-tasks.amazonaws.com",
