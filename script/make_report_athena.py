@@ -11,10 +11,12 @@ class query_inventory():
 
     def __init__(self):
         self.client = boto3.client("athena")
-        self.catalog = "AwsDataCatalog"
-        self.database = "default"
-        self.table = "hls_granules"
-        self.output_location = "s3://hls-global/reconciliation_reports/hls-global/HLS_data_products/query_results/"
+        with open("database_params.json", "r") as f:
+            params = json.load(f)
+        self.catalog = params["catalog"]
+        self.database = params["database"]
+        self.table = params["table"]
+        self.output_location = params["output_location"]
         self.check_table()
         self.query_manager()
 
@@ -87,7 +89,7 @@ class query_inventory():
         return response
 
     def query_manager(self):
-        self.date = datetime.datetime.today() - datetime.timedelta(days=3) 
+        self.date = datetime.datetime.today()
         self.partitionDate = f"{self.date:%Y-%m-%d-00-00}"
         partitions = self.check_partition_available()
         if len(partitions) < 1:
