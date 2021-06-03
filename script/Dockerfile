@@ -14,4 +14,4 @@ RUN apt-get -y update && apt-get install -y --no-install-recommends \
 WORKDIR /hls-lpdaac-orchestration
 COPY . /hls-lpdaac-orchestration/
 
-CMD ["python3", "make_report.py"]
+CMD ["python3", "make_report_athena.py"]
