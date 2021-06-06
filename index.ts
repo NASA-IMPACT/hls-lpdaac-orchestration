@@ -22,8 +22,10 @@ const rpa = new aws.iam.RolePolicyAttachment(`reconciliationTask-policy-${counte
     { policyArn: gccAssumeRolePolicy.arn, role: reconciliationTaskRole },
 );
 const managedPolicyArns: string[] = [
-    "arn:aws:iam::aws:policy/AWSLambdaFullAccess",
-    "arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess"
+    "arn:aws:iam::aws:policy/AWSLambda_FullAccess",
+    "arn:aws:iam::aws:policy/AmazonECS_FullAccess",
+    "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+    "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 ];
 for (const policy of managedPolicyArns) {
     const rpa = new aws.iam.RolePolicyAttachment(`reconciliationTask-policy-${counter++}`,
@@ -88,7 +90,7 @@ const reconciliationTask = new awsx.ecs.FargateTaskDefinition("reconciliationTas
     executionRole: reconciliationTaskExecutionRole,
     container: {
         image: awsx.ecs.Image.fromPath("reconciliationTask", "./script"),
-        memoryReservation: 3072,
+        memoryReservation: 5120,
     },
 });
 const reconciliationScheduleHandlerRole = new aws.iam.Role("reconciliationScheduleHandlerRole", {
@@ -107,11 +109,19 @@ const reconciliationScheduleHandlerRole = new aws.iam.Role("reconciliationSchedu
 });
 new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach1", {
     role: reconciliationScheduleHandlerRole,
-    policyArn: aws.iam.ManagedPolicies.AWSLambdaFullAccess,
+    policyArn: 'arn:aws:iam::aws:policy/AWSLambda_FullAccess',
 });
 new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach2", {
     role: reconciliationScheduleHandlerRole,
-    policyArn: aws.iam.ManagedPolicies.AmazonEC2ContainerServiceFullAccess,
+    policyArn: 'arn:aws:iam::aws:policy/AmazonECS_FullAccess',
+});
+new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach3", {
+    role: reconciliationScheduleHandlerRole,
+    policyArn: 'arn:aws:iam::aws:policy/AmazonAthenaFullAccess',
+});
+new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach4", {
+    role: reconciliationScheduleHandlerRole,
+    policyArn: 'arn:aws:iam::aws:policy/AmazonS3FullAccess',
 });
 // More info on Schedule Expressions at
 // https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
