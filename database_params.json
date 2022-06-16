@@ -1,6 +1,6 @@
 {
 	"catalog": "AwsDataCatalog",
 	"database": "default",
-	"table": "hls_v2",
+	"table": "hls_historical",
 	"output_location": "s3://impact-hls-inventories/queries"
 }

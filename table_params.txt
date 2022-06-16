@@ -12,4 +12,4 @@ WITH SERDEPROPERTIES (
 )  
   STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.SymlinkTextInputFormat'
   OUTPUTFORMAT  'org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat'
-  LOCATION 's3://impact-hls-inventories/hls-global-v2-forward/HLS_data_products/hive/';
+  LOCATION '{}';

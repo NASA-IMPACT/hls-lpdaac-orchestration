@@ -1,0 +1,4 @@
+{
+	"hls_v2": "s3://impact-hls-inventories/hls-global-v2-forward/HLS_data_products/hive",
+	"hls_historical": "s3://impact-hls-inventories/hls-global-v2-historical/HLS_historical_data_products/hive"
+}

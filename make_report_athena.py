@@ -4,6 +4,7 @@ import gzip
 import json
 import os
 import pandas as pd
+import sys
 import time
 
 
@@ -13,10 +14,18 @@ class query_inventory():
         self.client = boto3.client("athena")
         with open("database_params.json", "r") as f:
             params = json.load(f)
+        with open("inventory_locations.json", "r") as f:
+            inventory_locations = json.load(f)
         self.catalog = params["catalog"]
         self.database = params["database"]
         self.table = params["table"]
         self.output_location = params["output_location"]
+        if self.table not in inventory_locations:
+            print("Please add the s3 url to the hive directory for the inventory files to 'inventory_locations.json'. Exiting Now")
+            exit()
+        self.inventory_path = inventory_locations[self.table]
+        self.inventory_path += "/" if not self.inventory_path.endswith("/") else self.inventory_path
+        self.start_date = datetime.datetime.strptime(sys.argv[1], "%Y%j")
         self.check_table()
         self.query_manager()
 
@@ -26,7 +35,7 @@ class query_inventory():
         if len(tables["ResultSet"]["Rows"]) < 1:
             with open("table_params.txt","r") as f:
                 queryString = f.read().replace("\n","")
-            queryString = queryString.format(self.table)
+            queryString = queryString.format(self.table,self.inventory_path)
             result = self.query_athena(queryString)
         else:
             print(" ".join([
@@ -106,9 +115,9 @@ class query_inventory():
         self.get_files()
 
     def get_files(self):
-        self.start_date = self.date - datetime.timedelta(days=1)
+        self.end_date = self.start_date + datetime.timedelta(days=1)
         start_date = f"{self.start_date:%Y-%m-%dT00:00:00}"
-        end_date = f"{self.date:%Y-%m-%dT00:00:00}"
+        end_date = f"{self.end_date:%Y-%m-%dT00:00:00}"
         queryString = " ".join([
                 f"SELECT key, size, last_modified FROM {self.table}", 
                 f"WHERE dt='{self.partitionDate}' AND",
@@ -143,7 +152,7 @@ class query_inventory():
         report = report.reset_index()
         version = report["version"][0]
         report = report.reindex(columns = ["short_name", "version", "key", "size", "last_modified", "checksum"])
-        filename = f"HLS_reconcile_{self.start_date:%Y%j}_{version}.rpt"
+        filename = f"HLS_reconcile_{self.start_date:%Y%j}_historical_{version}.rpt"
         report.to_csv(path_or_buf=filename, sep=",", date_format="%Y-%m-%dT%H:%M:%SZ", header=False, index=False, mode="w")
         self.upload_to_s3(filename)
 

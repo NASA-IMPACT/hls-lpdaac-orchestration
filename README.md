@@ -1,39 +1,17 @@
-# HLS LPDAAC ORCHESTRATION
+# HLS LPDAAC ORCHESTRATION MANUAL IMPLEMENTATION
 
-This resposity contains HLS LPDAAC Orchestration Python Script, Docker container and Pulumi Deployment Script to run the docker container as Fargate task on a schedule
+This branch allows for the manual trigger of the reconciliation process for both forward and historical processing.
 
-## Automated Deployment Prerequisite
-* Install Node Version Manager (nvm) - https://nodesource.com/blog/installing-node-js-tutorial-using-nvm-on-mac-os-x-and-ubuntu/
-* Install Node.js using nvm
-* Install npm - https://www.e2enetworks.com/help/how-to-install-nodejs-npm-on-ubuntu/
-* Install Docker and setup up appropriate permission to run Docker without sudo - https://medium.com/@cjus/installing-docker-ce-on-an-aws-ec2-instance-running-ubuntu-16-04-f42fe7e80869
-* Install https://www.pulumi.com/docs/get-started/install/
+## Description of configuration
 
-## Automated Deployment
-* Clone the repository and make sure you are on the correct branch
-* run `npm install`
-* Login to pulumi `pulumi login --local`
-* Select your desired aws region `pulumi config set aws:region <value>`
-* Deploy the stack with command `pulumi up`
-    * Hit enter to create a new stack
-    * Enter passphrase for the stack
-    * Note: main deployment code is in `index.ts` file
-    
-## Deploying in Goddard Commercial Cloud (GCC)
-* GCC does not have a default VPC, thus we have to specify a VPC from an existing id in the index.ts file (example below) <br/>
+* `table_params.txt` - If the table does not exist in AWS athena, this is the template for creating a new one. Note that the Table Name and Location are formatted within the code using the `inventory_locations.json` file
 
-`const vpc = awsx.ec2.Vpc.fromExistingIds("my-vpc", {
-    vpcId: "vpc-40b38f25",
-    // publicSubnetIds: [],
-    // privateSubnetIds: [],
-});
-const cluster = new awsx.ecs.Cluster("hls-lpdaac-orchestration",{vpc});`
+* `inventory_locations.json` - This is a list of table names and the s3 path to their hive directories. If creating a new table, you must use the table name as the key and the path to the s3 path to the hive directory as the value for the script to work properly
 
-* GCC also restricts users from creating roles without permissions boundaries set so we also need to update the new role command in the index.ts file (example below) <br/>
+* `database_params.json` - This is the database configuration that looks for the table in athena. If the table does not exist in the database, a new one will be created if the hive directory is provided in the `inventory_locations.json` file. The output location in the json file corresponds to the output of the athena query.
 
-`const reconciliationTaskRole = new aws.iam.Role("reconciliationTask-taskRole", {
-    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-        Service: "ecs-tasks.amazonaws.com",
-        }),
-    permissionsBoundary: "arn:aws:iam::123456789012:policy/gcc-tenantOperatorBoundary"
-});`
+## Executables
+
+* `make_report_athena.py` - This is the main executable and requires an input start date formatted as `yyyyddd` (e.g. 2022151). By default, the code is configured to query for a single day at a time (e.g. 2022151 - 2022152) and the query is based on the last modified date in AWS.
+
+* `reconcile.sh` - This is a simple shell wrapper to run through multiple manual reconciliation triggers at a time (i.e. multiple days). There is 40-minute lag between reconciliation triggers to limit the load on LPDAAC ingest workflow.
