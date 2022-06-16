@@ -1,6 +1,6 @@
 {
 	"catalog": "AwsDataCatalog",
 	"database": "default",
-	"table": "hls_granules",
-	"output_location": "s3://hls-global/reconciliation_reports/hls-global/HLS_data_products/query_results/"
+	"table": "hls_historical",
+	"output_location": "s3://impact-hls-inventories/queries"
 }
