@@ -11,7 +11,7 @@ RUN apt-get -y update && apt-get install -y --no-install-recommends \
     && find /usr/local/lib/python3.*/ -name 'tests' -exec rm -r {} + \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /hls-lpdaac-orchestration
-COPY . /hls-lpdaac-orchestration/
+WORKDIR /hls-lpdaac-orchestration-v2
+COPY . /hls-lpdaac-orchestration-v2/
 
 CMD ["python3", "make_report_athena.py"]

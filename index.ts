@@ -1,10 +1,10 @@
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
-const reconciliationTaskRole = new aws.iam.Role("reconciliationTask-taskRole", {
+const reconciliationTaskRole = new aws.iam.Role("reconciliationTask-taskRole-v2", {
     assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
         Service: "ecs-tasks.amazonaws.com",
     }),
-    permissionsBoundary: "arn:aws:iam::611670965994:policy/gcc-tenantOperatorBoundary"
+    permissionsBoundary: "arn:aws:iam::611670965994:policy/mcp-tenantOperator"
 });
 const gccAssumeRolePolicy = new aws.iam.Policy("assumeGCCRolePolicy", {
     policy: {
@@ -71,7 +71,7 @@ const sgrule3 = new aws.ec2.SecurityGroupRule("outbound-rule", {
     securityGroupId: sg.id,
     description: "allow output to any ipv4 address using any protocol",
     });
-const cluster = new awsx.ecs.Cluster("hls-lpdaac-orchestration", { 
+const cluster = new awsx.ecs.Cluster("hls-lpdaac-orchestration-v2", { 
    vpc,
    securityGroups: [sg.id]}
    );
@@ -79,7 +79,7 @@ const reconciliationTaskExecutionRole = new aws.iam.Role("reconciliationTask-exe
     assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
         Service: "ecs-tasks.amazonaws.com",
     }),
-    permissionsBoundary: "arn:aws:iam::611670965994:policy/gcc-tenantOperatorBoundary"
+    permissionsBoundary: "arn:aws:iam::611670965994:policy/mcp-tenantOperator"
 });
 new aws.iam.RolePolicyAttachment("reconciliationTaskExecutionRoleAttach", {
     role: reconciliationTaskExecutionRole,
@@ -105,7 +105,7 @@ const reconciliationScheduleHandlerRole = new aws.iam.Role("reconciliationSchedu
             Sid: "",
         }],
     },
-    permissionsBoundary: "arn:aws:iam::611670965994:policy/gcc-tenantOperatorBoundary"
+    permissionsBoundary: "arn:aws:iam::611670965994:policy/mcp-tenantOperator"
 });
 new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach1", {
     role: reconciliationScheduleHandlerRole,
@@ -128,7 +128,7 @@ new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach4", {
 const reconciliationSchedule = aws.cloudwatch.onSchedule(
     "reconciliationScheduleHandler",
     //"cron(0/1 * * * ? *)",  //run every minute for testing
-    "cron(0 6 * * ? *)", //run at 6 AM
+    "cron(0 9 * * ? *)", //run at 9 AM
     new aws.lambda.CallbackFunction("reconciliationScheduleHandlerFunc", {
         role: reconciliationScheduleHandlerRole,
         callback: async (e) => {

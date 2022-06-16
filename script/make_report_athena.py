@@ -112,7 +112,7 @@ class query_inventory():
         queryString = " ".join([
                 f"SELECT key, size, last_modified FROM {self.table}", 
                 f"WHERE dt='{self.partitionDate}' AND",
-                "date_parse(last_modified,'%Y-%m-%dT%H:%i:%s.%fZ') >",
+                "date_parse(last_modified,'%Y-%m-%dT%H:%i:%s.%fZ') >=",
                 f"date_parse('{start_date}', '%Y-%m-%dT%H:%i:%s') AND",
                 "date_parse(last_modified,'%Y-%m-%dT%H:%i:%s.%fZ') <",
                 f"date_parse('{end_date}', '%Y-%m-%dT%H:%i:%s') ORDER BY",
@@ -141,8 +141,9 @@ class query_inventory():
         report.loc[:,"version"] = [".".join(x.split(".")[4:6])[1:].strip("_stac") for x in report.index]
         report.loc[:, "checksum"] = ["NA" for x in report.index]
         report = report.reset_index()
+        version = report["version"][0]
         report = report.reindex(columns = ["short_name", "version", "key", "size", "last_modified", "checksum"])
-        filename = f"HLS_reconcile_{self.start_date:%Y%j}.rpt"
+        filename = f"HLS_reconcile_{self.start_date:%Y%j}_{version}.rpt"
         report.to_csv(path_or_buf=filename, sep=",", date_format="%Y-%m-%dT%H:%M:%SZ", header=False, index=False, mode="w")
         self.upload_to_s3(filename)
 
