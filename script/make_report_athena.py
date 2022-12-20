@@ -36,10 +36,13 @@ class query_inventory():
                    )
                  )
 
-    def check_partition_available(self):
-        queryString = f"SHOW PARTITIONS {self.table} partition(dt='{self.partitionDate}')"
+    def get_last_partition(self):
+        queryString = f'SELECT * FROM "{self.table}$partitions" ORDER BY dt DESC'
         partitions = self.query_athena(queryString)
-        return partitions["ResultSet"]["Rows"]
+        print(len(partitions["ResultSet"]["Rows"]))
+        if len(partitions["ResultSet"]["Rows"]) >= 2:
+            partitionDate = partitions["ResultSet"]["Rows"][1]["Data"][0]["VarCharValue"]
+        return partitionDate
 
     def query_athena(self, queryString):
         query = self.submit_query(queryString)
@@ -89,27 +92,20 @@ class query_inventory():
         return response
 
     def query_manager(self):
-        self.date = datetime.datetime.today()
-        self.partitionDate = f"{self.date:%Y-%m-%d-00-00}"
-        partitions = self.check_partition_available()
-        if len(partitions) < 1:
+        self.date = datetime.date.today()
+        self.partitionDate = self.get_last_partition()
+        partitionDate = datetime.datetime.strptime(self.partitionDate,"%Y-%m-%d-%H-%M").date()
+        if self.date > partitionDate:
             queryString = f"MSCK REPAIR TABLE {self.table}"
             result = self.query_athena(queryString)
-            partitions = self.check_partition_available()
-            while len(partitions) < 1:
-                print(f"No partition available for {self.partitionDate}")
-                self.date -= datetime.timedelta(days=1)
-                self.partitionDate = f"{self.date:%Y-%m-%d-00-00}"
-                partitions = self.check_partition_available()
-
+            self.partitionDate = self.get_last_partition()
         print(f"Successfully found partition for {self.partitionDate}")
         self.get_files()
 
     def get_files(self):
         self.start_date = self.date - datetime.timedelta(days=1)
-        self.end_date = self.start_date + datetime.timedelta(days=1)
         start_date = f"{self.start_date:%Y-%m-%dT00:00:00}"
-        end_date = f"{self.end_date:%Y-%m-%dT00:00:00}"
+        end_date = f"{self.date:%Y-%m-%dT00:00:00}"
         queryString = " ".join([
                 f"SELECT key, size, last_modified FROM {self.table}", 
                 f"WHERE dt='{self.partitionDate}' AND",
@@ -121,6 +117,9 @@ class query_inventory():
                 ]
             )
         result = self.query_athena(queryString)
+        if len(result["ResultSet"]["Rows"]) < 2:
+            print("The query returned a response with 0 rows. Nothing more to do. Exiting.")
+            exit()
         self.read_csv()
 
     def read_csv(self):
