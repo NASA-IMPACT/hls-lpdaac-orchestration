@@ -45,10 +45,13 @@ class query_inventory():
                    )
                  )
 
-    def check_partition_available(self):
-        queryString = f"SHOW PARTITIONS {self.table} partition(dt='{self.partitionDate}')"
+    def get_last_partition(self):
+        queryString = f'SELECT * FROM "{self.table}$partitions" ORDER BY dt DESC'
         partitions = self.query_athena(queryString)
-        return partitions["ResultSet"]["Rows"]
+        print(len(partitions["ResultSet"]["Rows"]))
+        if len(partitions["ResultSet"]["Rows"]) >= 2:
+            partitionDate = partitions["ResultSet"]["Rows"][1]["Data"][0]["VarCharValue"]
+        return partitionDate
 
     def query_athena(self, queryString):
         query = self.submit_query(queryString)
@@ -98,19 +101,13 @@ class query_inventory():
         return response
 
     def query_manager(self):
-        self.date = datetime.datetime.today()
-        self.partitionDate = f"{self.date:%Y-%m-%d-00-00}"
-        partitions = self.check_partition_available()
-        if len(partitions) < 1:
+        self.date = datetime.date.today()
+        self.partitionDate = self.get_last_partition()
+        partitionDate = datetime.datetime.strptime(self.partitionDate,"%Y-%m-%d-%H-%M").date()
+        if self.date > partitionDate:
             queryString = f"MSCK REPAIR TABLE {self.table}"
             result = self.query_athena(queryString)
-            partitions = self.check_partition_available()
-            while len(partitions) < 1:
-                print(f"No partition available for {self.partitionDate}")
-                self.date -= datetime.timedelta(days=1)
-                self.partitionDate = f"{self.date:%Y-%m-%d-00-00}"
-                partitions = self.check_partition_available()
-
+            self.partitionDate = self.get_last_partition()
         print(f"Successfully found partition for {self.partitionDate}")
         self.get_files()
 
@@ -129,6 +126,9 @@ class query_inventory():
                 ]
             )
         result = self.query_athena(queryString)
+        if len(result["ResultSet"]["Rows"]) < 2:
+            print("The query returned a response with 0 rows. Nothing more to do. Exiting.")
+            exit()
         self.read_csv()
 
     def read_csv(self):
@@ -151,8 +151,12 @@ class query_inventory():
         report.loc[:, "checksum"] = ["NA" for x in report.index]
         report = report.reset_index()
         version = report["version"][0]
+        if "historical" in self.table:
+            ext = "_historical_"
+        else:
+            ext = "_"
         report = report.reindex(columns = ["short_name", "version", "key", "size", "last_modified", "checksum"])
-        filename = f"HLS_reconcile_{self.start_date:%Y%j}_historical_{version}.rpt"
+        filename = f"HLS_reconcile_{self.start_date:%Y%j}{ext}{version}.rpt"
         report.to_csv(path_or_buf=filename, sep=",", date_format="%Y-%m-%dT%H:%M:%SZ", header=False, index=False, mode="w")
         self.upload_to_s3(filename)
 
