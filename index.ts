@@ -123,6 +123,10 @@ new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach4", {
     role: reconciliationScheduleHandlerRole,
     policyArn: 'arn:aws:iam::aws:policy/AmazonS3FullAccess',
 });
+new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach5", {
+    role: reconciliationScheduleHandlerRole,
+    policyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+});
 // More info on Schedule Expressions at
 // https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
 const reconciliationSchedule = aws.cloudwatch.onSchedule(
