@@ -103,9 +103,10 @@ class query_inventory():
         self.get_files()
 
     def get_files(self):
-        self.start_date = self.date - datetime.timedelta(days=1)
+        self.start_date = self.date - datetime.timedelta(days=2)
+        self.end_date = self.start_date + datetime.timedelta(days=1)
         start_date = f"{self.start_date:%Y-%m-%dT00:00:00}"
-        end_date = f"{self.date:%Y-%m-%dT00:00:00}"
+        end_date = f"{self.end_date:%Y-%m-%dT00:00:00}"
         queryString = " ".join([
                 f"SELECT key, size, last_modified FROM {self.table}", 
                 f"WHERE dt='{self.partitionDate}' AND",
