@@ -132,7 +132,7 @@ new aws.iam.RolePolicyAttachment("reconciliationScheduleHandlerRoleAttach5", {
 const reconciliationSchedule = aws.cloudwatch.onSchedule(
     "reconciliationScheduleHandler",
     //"cron(0/1 * * * ? *)",  //run every minute for testing
-    "cron(0 9 * * ? *)", //run at 9 AM
+    "cron(0 23 * * ? *)", //run at 11 PM
     new aws.lambda.CallbackFunction("reconciliationScheduleHandlerFunc", {
         role: reconciliationScheduleHandlerRole,
         callback: async (e) => {
