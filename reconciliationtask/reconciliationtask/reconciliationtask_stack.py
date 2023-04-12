@@ -17,7 +17,7 @@ class ReconciliationtaskStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        reconciliationTaskRole = iam.Role(self, "reconciliationTask-taskRole-v2",role_name="reconciliationTask-taskRole-v2",
+        lpdaacOrchestrationReconciliationTaskRole = iam.Role(self, "lpdaac-orchestration-reconciliation-task-role",role_name="lpdaac-orchestration-reconciliationTask",
             assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com")
         )
 
@@ -31,34 +31,31 @@ class ReconciliationtaskStack(Stack):
                     "Resource": "*",
                     "Action": "sts:AssumeRole",
                 }]},
-            roles=[reconciliationTaskRole.role_name])
-        
-        reconciliationTaskRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "add_managed_policies1",managed_policy_arn="arn:aws:iam::aws:policy/AWSLambda_FullAccess"))
-        reconciliationTaskRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "add_managed_policies2", managed_policy_arn="arn:aws:iam::aws:policy/AmazonECS_FullAccess",))
-        reconciliationTaskRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "add_managed_policies3", managed_policy_arn="arn:aws:iam::aws:policy/AmazonAthenaFullAccess"))
-        reconciliationTaskRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "add_managed_policies4", managed_policy_arn="arn:aws:iam::aws:policy/AmazonS3FullAccess"))
+            roles=[lpdaacOrchestrationReconciliationTaskRole.role_name])
 
-        reconciliationTaskExecutionRole = iam.Role(self, "reconciliationTask-executionRole",role_name="reconciliationTask-executionRole",
+        lpdaacOrchestrationReconciliationTaskRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-role-add-managed-policies1",managed_policy_arn="arn:aws:iam::aws:policy/AWSLambda_FullAccess"))
+        lpdaacOrchestrationReconciliationTaskRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-role-add-managed-policies2", managed_policy_arn="arn:aws:iam::aws:policy/AmazonECS_FullAccess",))
+        lpdaacOrchestrationReconciliationTaskRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-role-add-managed-policies3", managed_policy_arn="arn:aws:iam::aws:policy/AmazonAthenaFullAccess"))
+        lpdaacOrchestrationReconciliationTaskRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-role-add-managed-policies4", managed_policy_arn="arn:aws:iam::aws:policy/AmazonS3FullAccess"))
+
+        lpdaacOrchestrationReconciliationTaskExecutionRole = iam.Role(self, "lpdaac-orchestration-reconciliation-task-execution-role",role_name="lpdaac-orchestration-reconciliation-task-execution-role",
             assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com")
         )
-        reconciliationTaskExecutionRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "add_managed_policies5", managed_policy_arn="arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"))
+        lpdaacOrchestrationReconciliationTaskExecutionRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "add_managed_policies5", managed_policy_arn="arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"))
 
-        reconciliationScheduleHandlerRole = iam.Role(
-            self,
-            "reconciliationScheduleHandlerRole",
-            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            managed_policies=[
-                iam.ManagedPolicy.from_managed_policy_arn(self, "reconciliationScheduleHandlerRole_policy1", managed_policy_arn="arn:aws:iam::aws:policy/AWSLambda_FullAccess"),
-                iam.ManagedPolicy.from_managed_policy_arn(self, "reconciliationScheduleHandlerRole_policy2", managed_policy_arn="arn:aws:iam::aws:policy/AmazonECS_FullAccess"),
-                iam.ManagedPolicy.from_managed_policy_arn(self, "reconciliationScheduleHandlerRole_policy3", managed_policy_arn="arn:aws:iam::aws:policy/AmazonAthenaFullAccess"),
-                iam.ManagedPolicy.from_managed_policy_arn(self, "reconciliationScheduleHandlerRole_policy4", managed_policy_arn="arn:aws:iam::aws:policy/AmazonS3FullAccess"),
-                #iam.ManagedPolicy.from_managed_policy_arn(self, "reconciliationScheduleHandlerRole_policy5", managed_policy_arn="arn:aws:iam::aws:policy/AWSLambdaBasicExecutionRole")
-            ]
+        lpdaacOrchestrationReconciliationScheduleHandlerRole = iam.Role(self, "lpdaac-orchestration-reconciliation-task-scheduler-handler-role",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com")
         )
+        
+        lpdaacOrchestrationReconciliationScheduleHandlerRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-scheduler-handler-role_policy1", managed_policy_arn="arn:aws:iam::aws:policy/AWSLambda_FullAccess"))
+        lpdaacOrchestrationReconciliationScheduleHandlerRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-scheduler-handler-role_policy2", managed_policy_arn="arn:aws:iam::aws:policy/AmazonECS_FullAccess"))
+        lpdaacOrchestrationReconciliationScheduleHandlerRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-scheduler-handler-role_policy3", managed_policy_arn="arn:aws:iam::aws:policy/AmazonAthenaFullAccess"))
+        lpdaacOrchestrationReconciliationScheduleHandlerRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-scheduler-handler-role_policy4", managed_policy_arn="arn:aws:iam::aws:policy/AmazonS3FullAccess"))
+        lpdaacOrchestrationReconciliationScheduleHandlerRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(self, "lpdaac-orchestration-reconciliation-task-scheduler-handler-role_policy5", managed_policy_arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"))
 
-        sg = ec2.CfnSecurityGroup(self, "hls-reconciliation",
+        sg = ec2.CfnSecurityGroup(self, "lpdaac-orchestration-reconciliation-task-security-group",
             vpc_id="vpc-0df5e08d7f490adaa",
-            group_name="hls-reconciliation",
+            group_name="lpdaac-orchestration-reconciliation-task-security-group",
             group_description="security group for HLS reconciliation process",
             security_group_ingress=[ec2.CfnSecurityGroup.IngressProperty(
                 ip_protocol="tcp",
@@ -89,24 +86,28 @@ class ReconciliationtaskStack(Stack):
             self,
             "MyCluster",
             vpc=vpc,
-            cluster_name="hls-lpdaac-orchestration-v2",
+            cluster_name="hls-lpdaac-orchestration-reconciliation",
             #security_groups=[sg],
         )
 
-        reconciliation_task_definition = ecs.FargateTaskDefinition(
+        lpdaac_orchestration_reconciliation_task_definition = ecs.FargateTaskDefinition(
             self, "ReconciliationTaskDefinition",
-            task_role=reconciliationTaskRole,
-            execution_role=reconciliationTaskExecutionRole,
+            task_role=lpdaacOrchestrationReconciliationTaskRole,
+            execution_role=lpdaacOrchestrationReconciliationTaskExecutionRole,
+            runtime_platform=ecs.RuntimePlatform(
+            operating_system_family=ecs.OperatingSystemFamily.LINUX,
+            cpu_architecture=ecs.CpuArchitecture.ARM64,
+            ),
             memory_limit_mib=512,
             cpu=256
         )
         
         asset = ecr_assets.DockerImageAsset(
             self, "ReconciliationTaskImage",
-            directory= os.path.join("../script")
+            directory= os.path.join("../script")            
         )
 
-        container = reconciliation_task_definition.add_container(
+        lpdaac_orchestration_reconciliation_task_definition.add_container(
             "ReconciliationTaskContainer",
             image=ecs.ContainerImage.from_docker_image_asset(asset),
             logging=ecs.LogDriver.aws_logs(stream_prefix='my-log-group',log_retention=RetentionDays.FIVE_DAYS)
@@ -114,23 +115,19 @@ class ReconciliationtaskStack(Stack):
         )
 
         # Define the Lambda function
-        reconciliation_schedule_handler_func = lambda_.Function(
+        lpdaac_orchestration_reconciliation_schedule_handler_func = lambda_.Function(
             self,
             "reconciliationScheduleHandlerFunc",
             runtime=lambda_.Runtime.PYTHON_3_8,
             handler="index.handler",
             code=lambda_.Code.from_inline("def handler(event, context):\n    print('Hello, world!')"),
-            role=reconciliationScheduleHandlerRole,
-            environment={
-                'ECS_CLUSTER_NAME': cluster.cluster_name,
-                'ECS_TASK_DEFINITION_ARN': reconciliation_task_definition.task_definition_arn
-            }
+            role=lpdaacOrchestrationReconciliationScheduleHandlerRole
         )
 
         # Define the CloudWatch scheduled event
-        reconciliation_schedule = events.Rule(
+        lpdaac_orchestration_reconciliation_schedule = events.Rule(
             self,
-            "reconciliationScheduleHandler",
+            "lpdaacOrchestrationReconciliationSchedule",
             schedule=events.Schedule.cron(
                 #hour='23',
                 minute='*'
@@ -138,9 +135,9 @@ class ReconciliationtaskStack(Stack):
         )
 
         # Add the Lambda function as a target for the CloudWatch event
-        reconciliation_schedule.add_target(
+        lpdaac_orchestration_reconciliation_schedule.add_target(
             targets.LambdaFunction(
-                reconciliation_schedule_handler_func
+                lpdaac_orchestration_reconciliation_schedule_handler_func
             )
         )
 
